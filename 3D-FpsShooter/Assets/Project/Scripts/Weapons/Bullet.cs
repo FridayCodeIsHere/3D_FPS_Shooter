@@ -7,7 +7,9 @@ public class Bullet : MonoBehaviour
     [SerializeField] private float _lifeTime;
     [SerializeField] private ParticleSystem _particleSystem;
     [SerializeField] private int _damage;
+    [SerializeField] private string _nameLayerCollision;
     private Rigidbody _rb;
+    private Collider _collider;
     private float _multiplierSpeed = 200f;
 
     #region MonoBehaviour
@@ -22,6 +24,7 @@ public class Bullet : MonoBehaviour
     private void Start()
     {
         _rb = GetComponent<Rigidbody>();
+        _collider = GetComponent<Collider>();
     }
 
     private void Update()
@@ -37,9 +40,13 @@ public class Bullet : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.gameObject.TryGetComponent(out IDamageable damageableItem))
+        if (other.gameObject.layer == LayerMask.NameToLayer(_nameLayerCollision))
         {
-            damageableItem.ApplyDamage(_damage);
+            if (other.gameObject.TryGetComponent(out IDamageable damageableItem))
+            {
+
+                damageableItem.ApplyDamage(_damage);
+            }
         }
         Destroy(this.gameObject);
         Instantiate(_particleSystem, transform.position + (transform.forward *(-_speed * Time.deltaTime)), transform.rotation);

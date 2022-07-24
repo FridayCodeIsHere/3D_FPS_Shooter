@@ -130,6 +130,7 @@ MonoBehaviour:
   _lifeTime: 7
   _particleSystem: {fileID: 3885201507117294457, guid: b0a37b63907e43847a219e77676433c6, type: 3}
   _damage: 24
+  _nameLayerCollision: Enemy
 --- !u!96 &4343040512902247547
 TrailRenderer:
   serializedVersion: 2

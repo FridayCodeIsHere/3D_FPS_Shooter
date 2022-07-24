@@ -1,14 +1,19 @@
 using UnityEngine;
 using UnityEngine.Events;
 
-public class Health : MonoBehaviour, IDamageable
+public class Health : MonoBehaviour, IDamageable, IRegeneration
 {
     [SerializeField] private int _health;
+    [SerializeField] private bool _overflowMaxHealth;
+    public int CurrentHealth { get; private set; }
 
-    private int _currentHealth;
-    public UnityEvent OnDead;
-    public UnityEvent OnTakeDamage;
-    
+    public int TotalHealth => _health;
+    public bool OverflowMaxHealth => _overflowMaxHealth;
+
+    public event DamageAction OnApplyDamage;
+    public event DamageAction OnDead;
+    public event ApplyHealth OnApplyHealth;
+
 
     #region MonoBehaviour
     private void OnValidate()
@@ -17,27 +22,60 @@ public class Health : MonoBehaviour, IDamageable
     }
     #endregion
 
-    private void Start()
+    private void OnEnable()
     {
-        _currentHealth = _health;
+        OnDead += DestroyObject;
+    }
+
+    private void OnDisable()
+    {
+        OnDead -= DestroyObject;
+    }
+
+    private void Awake()
+    {
+        CurrentHealth = _health;
     }
 
     public void ApplyDamage(int damage)
     {
-        damage = _currentHealth < damage ? _currentHealth : damage;
-        _currentHealth -= damage;
+        damage = CurrentHealth < damage ? CurrentHealth : damage;
+        CurrentHealth -= damage;
+        OnApplyDamage?.Invoke();
 
-        if (_currentHealth <= 0)
+        if (CurrentHealth <= 0)
         {
             OnDead?.Invoke();
-            return;
         }
-        OnTakeDamage?.Invoke();
+    }
+
+    public void ApplyHealth(int healAmount, GameObject sender = null)
+    {
+        if (OverflowMaxHealth)
+        {
+            CurrentHealth += healAmount;
+            _health = CurrentHealth;
+            OnApplyHealth?.Invoke();
+            if (sender)
+                Destroy(sender);
+        }
+        else
+        {
+            if (CurrentHealth < TotalHealth)
+            {
+                int differenceHealth = _health - CurrentHealth;
+                healAmount = differenceHealth > healAmount ? healAmount : differenceHealth;
+                CurrentHealth += healAmount;
+                OnApplyHealth?.Invoke();
+                if (sender)
+                    Destroy(sender);
+            }
+        }
     }
 
     public void DestroyObject()
     {
-        Destroy(this.gameObject);
+        gameObject.SetActive(false);
     }
 
     [ContextMenu("Random Health")]
